@@ -1,19 +1,6 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
-int	get_tokens_size(t_token *tokens)
-{
-	int	i;
-
-	i = 0;
-	while (tokens)
-	{
-		tokens = tokens->next;
-		i++;
-	}
-	return (i);
-}
-
-void	update_token(t_token *token, char *str)
+static void	update_token(t_token *token, char *str)
 {
 	char	*new_str;
 	int		i;
@@ -21,7 +8,7 @@ void	update_token(t_token *token, char *str)
 	int		total;
 
 	total = ft_strlen(str) + ft_strlen(token->value);
-	new_str = malloc(sizeof(char) * (total + 1));
+	new_str = ft_malloc(sizeof(char) * (total + 1), 0);
 	i = 0;
 	while (i < total)
 	{
@@ -33,12 +20,10 @@ void	update_token(t_token *token, char *str)
 			new_str[i++] = str[j++];
 	}
 	new_str[i] = 0;
-	free(token->value);
 	token->value = parsing_strdup(new_str);
-	free(new_str);
 }
 
-void	join_all(t_token **tokens_ptr)
+static void	join_all(t_token **tokens_ptr)
 {
 	t_token	*tokens;
 	t_token	*tmp;
@@ -51,46 +36,42 @@ void	join_all(t_token **tokens_ptr)
 		{
 			tmp = tokens->next;
 			to_join_str = tmp->value;
+			if (ft_strlen(tokens->value) != 0)
+			{
+				tokens->quoted = tmp->quoted;
+			}
 			update_token(tokens, to_join_str);
 			tokens->is_joignable = tmp->is_joignable;
-			tokens->quoted = tmp->quoted;
+			if (tmp->type == INFILE || tmp->type == OUTFILE
+				|| tmp->type == APPEND_FILE || tmp->type == HEREDOC_DEL)
+				tokens->type = tmp->type;
 			tokens->next = tmp->next;
-			free(tmp->value);
-			free(tmp);
 		}
 		else
 			tokens = tokens->next;
 	}
 }
 
-void	clear_tokens(t_token **tokens)
+static void	ignore_all(t_token **tokens)
 {
 	t_token	*tmp;
 	t_token	*last;
-	t_token	*to_delete;
 
 	tmp = *tokens;
 	last = NULL;
 	while (tmp)
 	{
-		if (ft_strlen(tmp->value) == 0)
+		if (tmp->type == IGNORED)
 		{
-			if (tmp->quoted == NONE)
+			tmp = tmp->next;
+			if (last == NULL)
 			{
-				to_delete = tmp;
-				tmp = tmp->next;
-				if (last == NULL)
-					*tokens = tmp;
-				else
-					last->next = tmp;
-				free(to_delete->value);
-				free(to_delete);
+				*tokens = tmp;
 			}
 			else
 			{
-				tmp = tmp->next;
+				last->next = tmp;
 			}
-			
 		}
 		else
 		{
@@ -99,6 +80,43 @@ void	clear_tokens(t_token **tokens)
 		}
 	}
 }
+
+static void	clear_tokens(t_token **tokens)
+{
+	t_token	*tmp;
+
+	tmp = *tokens;
+	while (tmp)
+	{
+		if (ft_strlen(tmp->value) == 0)
+		{
+			if (tmp->type == HEREDOC_DEL && tmp->quoted != NONE)
+				tmp->value = ft_strdup("\0");
+			else if (tmp->quoted != NONE)
+				tmp->value = ft_strdup("\0");
+			else
+			{
+				tmp->type = IGNORED;
+			}
+		}
+		tmp = tmp->next;
+	}
+	ignore_all(tokens);
+}
+
+// void	print_token(t_token *tokens)
+// {
+// 	t_token	*tmp;
+
+// 	tmp = tokens;
+// 	while (tmp)
+// 	{
+// 		printf("This tokens is {%s} with type {%d}, ", tmp->value, tmp->type);
+// 		printf("and quoted {%d} joignable {%d}\n", tmp->quoted,
+// 			tmp->is_joignable);
+// 		tmp = tmp->next;
+// 	}
+// }
 
 t_cmd	*parse_pipe(char *line, char **envp)
 {
@@ -109,18 +127,14 @@ t_cmd	*parse_pipe(char *line, char **envp)
 	tokens = tokenize(line);
 	if (tokens == NULL)
 		return (NULL);
-	if (validate_pipe(tokens) == -1)
-    {
-        free_tokens(tokens);
+	if (validate_pipe(tokens, 1) == -1)
 		return (NULL);
-    }
 	update_tokens(&tokens);
 	expand_all(&tokens, envp);
 	join_tokens(&tokens);
 	join_all(&tokens);
-	printf("This token is {%s} quoted {%d}\n", tokens->value, tokens->quoted);
 	clear_tokens(&tokens);
-	if (tokens == NULL)
+	if (tokens && validate_pipe(tokens, 0) == -1)
 		return (NULL);
 	cmds = build_cmds(tokens);
 	if (cmds == NULL && status_fct(-1) == 2)
@@ -128,6 +142,5 @@ t_cmd	*parse_pipe(char *line, char **envp)
 		ft_malloc(0, 1);
 		return (NULL);
 	}
-	free_tokens(tokens);
 	return (cmds);
 }

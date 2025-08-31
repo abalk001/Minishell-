@@ -1,3 +1,4 @@
+#include "../include/minishell.h"
 #include "libft.h"
 
 static int	len_num(int n)
@@ -23,7 +24,7 @@ char	*ft_itoa(int n)
 
 	num = n;
 	len = len_num(n);
-	result = (char *)malloc(sizeof(char) * (len + 1));
+	result = (char *)ft_malloc(sizeof(char) * (len + 1), 0);
 	if (!result)
 		return (NULL);
 	result[len--] = '\0';

@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 static int	get_args_len(t_token *tokens, t_token_type type)
 {
@@ -37,7 +37,7 @@ char	**get_args(t_token *tokens, t_token_type type)
 			if (!args[i])
 			{
 				ft_malloc(0, 1);
-				status_fct(2);
+				status_fct(STATUS_OTHER);
 				return (NULL);
 			}
 			i++;

@@ -1,5 +1,5 @@
+#include "../include/minishell.h"
 #include "libft.h"
-#include "../minishell.h"
 
 static int	count_word(const char *s, char c)
 {
@@ -34,13 +34,6 @@ static char	*allocate_word(const char *s, int start, int end)
 	return (word);
 }
 
-static void	free_split(char **split, int j)
-{
-	while (j > 0)
-		free(split[--j]);
-	free(split);
-}
-
 static char	**allocate(const char *s, char c)
 {
 	char	**arr;
@@ -62,7 +55,7 @@ static char	**allocate(const char *s, char c)
 		{
 			arr[j++] = allocate_word(s, start, i);
 			if (!arr[j - 1])
-				return (free_split(arr, j - 2), NULL);
+				return (NULL);
 		}
 		i++;
 	}

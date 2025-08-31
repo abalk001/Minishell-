@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 void	skip_spaces(char **str)
 {
@@ -45,46 +45,41 @@ char	*extract_quoted(char **line, int *joignable, t_quoted *quoted_ptr)
 	return (parsing_strndup(start, *line - start - 1));
 }
 
-int	validate_pipe(t_token *tokens)
+static int	check_start(int start, char *value)
 {
-	t_token	*tmp;
-
-	tmp = tokens;
-	while (tmp)
+	if (start)
 	{
-		if (tmp->next == NULL && is_special(tmp->value))
-			return (printf("Error validation token\n"), status_fct(2), -1);
-		if (is_special(tmp->value) && tmp->next && is_special(tmp->next->value))
-		{
-			if (ft_strncmp(tmp->value, "|", 1) == 0
-				&& ft_strncmp(tmp->next->value, "|", 1) == 0)
-				return (printf("Error validation token\n"), status_fct(2), -1);
-			if (is_special(tmp->value) && ft_strncmp(tmp->next->value, "|",
-					1) == 0)
-				return (printf("Error validation token\n"), status_fct(2), -1);
-		}
-		tmp = tmp->next;
+		if (is_pipe(value))
+			return (print_error_3(SYNTAX_ERROR, value, "'\n"),
+				status_fct(STATUS_OTHER), -1);
 	}
 	return (0);
 }
 
-int	is_misquoted(char *line)
+int	validate_pipe(t_token *tokens, int start)
 {
-	char	quote;
-	int		i;
+	t_token	*tmp;
 
-	i = 0;
-	quote = 0;
-	while (line[i])
+	tmp = tokens;
+	if (check_start(start, tmp->value) == -1)
+		return (-1);
+	while (tmp)
 	{
-		if ((line[i] == '\'' || line[i] == '"'))
+		if ((is_ex_special(tmp->value) || is_special(tmp->value)) && tmp->next
+			&& (is_ex_special(tmp->next->value) || is_special(tmp->next->value)
+				|| is_pipe(tmp->next->value)))
+			return (print_error_2(SYNTAX_ERROR, tmp->next->value),
+				ft_putstr_fd("'\n", 2), status_fct(STATUS_OTHER), -1);
+		if ((is_ex_special(tmp->value) || is_special(tmp->value)) && !tmp->next)
+			return (ft_putstr_fd(NEWLINE_ERR, 2), status_fct(STATUS_OTHER), -1);
+		if (is_pipe(tmp->value) && !tmp->next)
 		{
-			if (quote == 0)
-				quote = line[i];
-			else if (quote == line[i])
-				quote = 0;
+			if (start)
+				return (ft_putstr_fd(NEWLINE_ERR, 2), status_fct(STATUS_OTHER),
+					-1);
+			return (status_fct(0), -1);
 		}
-		i++;
+		tmp = tmp->next;
 	}
-	return (quote != 0);
+	return (0);
 }

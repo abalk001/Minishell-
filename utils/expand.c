@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 static void	get_total_helper(const char *str, int *i, int *len, char **envp)
 {
@@ -43,7 +43,6 @@ int	get_total(const char *str, char **envp)
 			if (status_str)
 			{
 				len += ft_strlen(status_str);
-				free(status_str);
 			}
 			i += 2;
 			continue ;
@@ -54,7 +53,7 @@ int	get_total(const char *str, char **envp)
 }
 
 static void	expand_into_helper(const char *str, t_expansion_data *data,
-	char *new, char **envp)
+		char *new, char **envp)
 {
 	char	*key;
 	char	*val;
@@ -67,7 +66,7 @@ static void	expand_into_helper(const char *str, t_expansion_data *data,
 		if (key)
 			val = find_env_value(key, envp);
 		else
-			val = " ";
+			val = NULL;
 		if (val)
 		{
 			(*data).k = 0;
@@ -83,7 +82,7 @@ static void	expand_into_helper(const char *str, t_expansion_data *data,
 		new[((*data).j)++] = str[((*data).i)++];
 }
 
-void	expand_into(const char *str, char **envp, char *new)
+void	expand_into(const char *str, char **envp, char *new, int *to_double)
 {
 	t_expansion_data	ex_data;
 
@@ -91,6 +90,9 @@ void	expand_into(const char *str, char **envp, char *new)
 	ex_data.i = 0;
 	while (str[ex_data.i])
 	{
+		if (str[ex_data.i] == '$' && ex_data.i > 0 && str[ex_data.i - 1] == '='
+			&& to_double != NULL)
+			*to_double = 1;
 		if (str[ex_data.i] == '$' && str[ex_data.i + 1] == '?')
 		{
 			ex_data.status_str = ft_itoa(status_fct(-1));
@@ -99,7 +101,6 @@ void	expand_into(const char *str, char **envp, char *new)
 				ex_data.k = 0;
 				while (ex_data.status_str[ex_data.k])
 					new[ex_data.j++] = ex_data.status_str[ex_data.k++];
-				free(ex_data.status_str);
 			}
 			ex_data.i += 2;
 			continue ;

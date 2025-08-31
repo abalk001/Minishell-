@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 static void	addstr(char *dest, const char *src)
 {
@@ -13,16 +13,10 @@ static char	*ft_pwd(char *pwd, char *cwd)
 {
 	char	*new_pwd;
 
-	new_pwd = malloc(strlen(pwd) + strlen(cwd) + 1);
+	new_pwd = ft_malloc(ft_strlen(pwd) + ft_strlen(cwd) + 1, 0);
 	ft_strlcpy(new_pwd, pwd, ft_strlen(pwd) + 1);
 	addstr(new_pwd, cwd);
 	return (new_pwd);
-}
-
-static void	free_this(char *new_pwd, char *cwd)
-{
-	free(new_pwd);
-	free(cwd);
 }
 
 static void	update_path(char **envp, char *pwd)
@@ -41,13 +35,12 @@ static void	update_path(char **envp, char *pwd)
 			{
 				new_pwd = ft_pwd(envp[i], "/..");
 				envp[i] = ft_strdup(new_pwd);
-				free_this(new_pwd, cwd);
+				free(cwd);
 				return ;
 			}
 			new_pwd = ft_pwd(pwd, cwd);
-			free(envp[i]);
 			envp[i] = ft_strdup(new_pwd);
-			free_this(new_pwd, cwd);
+			free(cwd);
 			return ;
 		}
 	}
@@ -55,9 +48,17 @@ static void	update_path(char **envp, char *pwd)
 
 int	cmd_cd(char **args, char **envp)
 {
+	char	*var;
+
 	if (!args[1])
 	{
-		write(2, "minishell: cd missing argument\n", 32);
+		var = getenv("USER");
+		if (!var)
+			return (ft_putstr_fd("environnement not found", 2), 1);
+		var = ft_strjoin3("/home/", var, "/");
+		update_path(envp, "OLDPWD=");
+		chdir(var);
+		update_path(envp, "PWD=");
 		return (1);
 	}
 	if (args[2])
@@ -67,10 +68,7 @@ int	cmd_cd(char **args, char **envp)
 	}
 	update_path(envp, "OLDPWD=");
 	if (chdir(args[1]) != 0)
-	{
-		perror("minishell: cd");
-		return (1);
-	}
+		return (perror("minishell: cd"), 1);
 	update_path(envp, "PWD=");
 	return (0);
 }

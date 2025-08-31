@@ -1,5 +1,5 @@
 #include "libft.h"
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 char	*ft_substr(char const *s, unsigned int start, size_t len)
 {
@@ -14,8 +14,6 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	if (start + len > s_len)
 		len = s_len - start;
 	sub = (char *)ft_malloc(len + 1, 0);
-	if (!sub)
-		return (NULL);
 	ft_strlcpy(sub, s + start, len + 1);
 	return (sub);
 }

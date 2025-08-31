@@ -1,16 +1,4 @@
-#include "../minishell.h"
-
-t_address	*ft_address_last(t_address *lst)
-{
-	t_address	*temp;
-
-	temp = lst;
-	while (temp && temp->next)
-	{
-		temp = temp->next;
-	}
-	return (temp);
-}
+#include "../include/minishell.h"
 
 int	is_space(char c)
 {
@@ -21,37 +9,40 @@ int	is_space(char c)
 	return (0);
 }
 
-// char	*ft_strndup(const char *src, int n)
-// {
-// 	char	*dest;
-// 	int		size;
-
-// 	size = n;
-// 	dest = (char *)ft_malloc((size + 1) * sizeof(char), 0);
-// 	ft_memcpy(dest, src, size);
-// 	dest[size] = '\0';
-// 	return (dest);
-// }
-
 int	is_special(char *str)
 {
-	if (ft_strncmp(str, "<", 1) == 0)
+	if (ft_strncmp(str, "<", 1) == 0 && ft_strlen(str) == 1)
 	{
 		return (1);
 	}
-	else if (ft_strncmp(str, ">", 1) == 0)
+	else if (ft_strncmp(str, ">", 1) == 0 && ft_strlen(str) == 1)
 	{
 		return (1);
 	}
-	else if (ft_strncmp(str, "<<", 2) == 0)
+	else if (ft_strncmp(str, "<<", 2) == 0 && ft_strlen(str) == 2)
 	{
 		return (1);
 	}
-	else if (ft_strncmp(str, ">>", 2) == 0)
+	else if (ft_strncmp(str, ">>", 2) == 0 && ft_strlen(str) == 2)
 	{
 		return (1);
 	}
-	else if (ft_strncmp(str, "|", 1) == 0)
+	return (0);
+}
+
+int	is_pipe(char *str)
+{
+	if (ft_strncmp(str, "|", 1) == 0 && ft_strlen(str) == 1)
+	{
+		return (1);
+	}
+	return (0);
+}
+
+int	is_ex_special(char *str)
+{
+	if ((ft_strncmp(str, ">>", 2) == 0 || ft_strncmp(str, "<<", 2) == 0)
+		&& ft_strlen(str) == 2)
 	{
 		return (1);
 	}

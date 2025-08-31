@@ -1,19 +1,4 @@
-#include "../minishell.h"
-
-int	get_cmds_nbr(t_cmd *cmd)
-{
-	int		len;
-	t_cmd	*tmp;
-
-	len = 0;
-	tmp = cmd;
-	while (tmp)
-	{
-		len++;
-		tmp = tmp->next;
-	}
-	return (len);
-}
+#include "../include/minishell.h"
 
 static int	get_cmds_nbr_by_tokens(t_token *tokens)
 {
@@ -33,13 +18,20 @@ static int	get_cmds_nbr_by_tokens(t_token *tokens)
 
 static int	is_built_in(char *str)
 {
-	if (ft_strncmp(str, "cd", 2) == 0 || ft_strncmp(str, "exit", 4) == 0
-		|| ft_strncmp(str, "export", 6) == 0 || ft_strncmp(str, "env", 3) == 0
-		|| ft_strncmp(str, "unset", 5) == 0 || ft_strncmp(str, "echo", 4) == 0
-		|| ft_strncmp(str, "pwd", 3) == 0)
-	{
+	if (ft_strncmp(str, "cd", 2) == 0 && ft_strlen(str) == 2)
 		return (1);
-	}
+	if (ft_strncmp(str, "exit", 4) == 0 && ft_strlen(str) == 4)
+		return (1);
+	if (ft_strncmp(str, "export", 6) == 0 && ft_strlen(str) == 6)
+		return (1);
+	if (ft_strncmp(str, "env", 3) == 0 && ft_strlen(str) == 3)
+		return (1);
+	if (ft_strncmp(str, "unset", 5) == 0 && ft_strlen(str) == 5)
+		return (1);
+	if (ft_strncmp(str, "echo", 4) == 0 && ft_strlen(str) == 4)
+		return (1);
+	if (ft_strncmp(str, "pwd", 3) == 0 && ft_strlen(str) == 3)
+		return (1);
 	return (0);
 }
 
@@ -49,6 +41,14 @@ static void	init_cmd(t_cmd **cmd, t_token *tokens)
 	(*cmd)->args = get_args(tokens, WORD);
 	(*cmd)->redirections = get_redirections(tokens);
 	(*cmd)->next = NULL;
+}
+
+static void	advance(t_token **tokens_ptr)
+{
+	while (*tokens_ptr && (*tokens_ptr)->type != PIPE)
+		*tokens_ptr = (*tokens_ptr)->next;
+	if (*tokens_ptr && (*tokens_ptr)->type == PIPE)
+		*tokens_ptr = (*tokens_ptr)->next;
 }
 
 t_cmd	*build_cmds(t_token *tokens)

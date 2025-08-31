@@ -1,5 +1,5 @@
 #include "libft.h"
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 char	*ft_strjoin(char const *s1, char const *s2)
 {

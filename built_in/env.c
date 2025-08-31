@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 int	env_local(char **envp)
 {
@@ -6,7 +6,10 @@ int	env_local(char **envp)
 
 	i = -1;
 	while (envp[++i])
-		printf("%s\n", envp[i]);
+	{
+		if (ft_strchr(envp[i], '='))
+			printf("%s\n", envp[i]);
+	}
 	return (0);
 }
 

@@ -1,18 +1,18 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 static int	init_pipe(t_cmd *cmds, int (*pipes)[2], pid_t *pids)
 {
-	int i;
+	int	i;
 	int	k;
 
 	i = -1;
 	k = -1;
 	while (++i < count_commands(cmds) - 1)
 	{
-		if (pipe(pipes[i]) < 0) 
+		if (pipe(pipes[i]) < 0)
 		{
 			perror("pipe");
-			while(++k < i)
+			while (++k < i)
 			{
 				close(pipes[k][0]);
 				close(pipes[k][1]);
@@ -24,6 +24,7 @@ static int	init_pipe(t_cmd *cmds, int (*pipes)[2], pid_t *pids)
 	}
 	return (0);
 }
+
 static int	handle_pids_pipes(t_cmd *cmds, int (*pipes)[2], pid_t *pids)
 {
 	if ((count_commands(cmds) - 1) > 0 && !pipes)
@@ -39,55 +40,58 @@ static int	handle_pids_pipes(t_cmd *cmds, int (*pipes)[2], pid_t *pids)
 	}
 	return (0);
 }
-static void	signals_restore()
-{
-	struct sigaction	sa_int;
 
-	sa_int.sa_handler = sigint_handler_parent;
-	sigemptyset(&sa_int.sa_mask);
-	sa_int.sa_flags = SA_RESTART;
-	sigaction(SIGINT, &sa_int, NULL);
-	signal(SIGQUIT, SIG_IGN);
+static void	one_cmd(t_cmd *cmds, char ***env)
+{
+	if (ft_strcmp(cmds->args[0], "cd") == 0)
+		status_fct(cmd_cd(cmds->args, *env));
+	else if (ft_strcmp(cmds->args[0], "export") == 0)
+		status_fct(export(cmds->args, env));
+	else if (ft_strcmp(cmds->args[0], "env") == 0)
+		status_fct(env_local(*env));
+	else if (ft_strcmp(cmds->args[0], "echo") == 0)
+		status_fct(echo_local(cmds->args));
+	else if (ft_strcmp(cmds->args[0], "pwd") == 0)
+		status_fct(pwd_local(*env));
+	else if (ft_strcmp(cmds->args[0], "unset") == 0)
+		status_fct(unset(cmds->args, env));
+	if (ft_strcmp(cmds->args[0], "exit") == 0)
+		status_fct(builtin_exit(cmds->args));
+	return ;
 }
-static void	parent_wait(t_cmd *cmds, pid_t *pids)
-{
-	int	i;
-	int status;
 
-	i = -1;
-	while(++i < count_commands(cmds))
+void	execute_close(t_cmd *cmds, char ***env, int save)
+{
+	one_cmd(cmds, env);
+	dup2(save, STDOUT_FILENO);
+	close(save);
+}
+
+void	execute_pipe(t_cmd *cmds, char ***env)
+{
+	pid_t	*pids;
+	int		n;
+	int		save;
+	int		(*pipes)[2];
+
+	n = count_commands(cmds);
+	if (n == 1 && cmds->is_builtin)
 	{
-		waitpid(pids[i], &status, 0);
-		if (WIFEXITED(status))
-			status_fct(WEXITSTATUS(status));
-		else if (WIFSIGNALED(status))
+		if (cmds->redirections)
 		{
-			status_fct(128 + WTERMSIG(status));
+			save = dup(STDOUT_FILENO);
+			if (redirec_here_and_there_one_cmd(cmds) == 1)
+				return (dup2(save, STDOUT_FILENO), (void)close(save));
+			execute_close(cmds, env, save);
 		}
-	}
-	if(WIFSIGNALED(status))
-		write(1, "\n", 1);
-}
-void execute_pipe(t_cmd *cmds, char ***env)
-{
-	int (*pipes)[2];
-	pid_t *pids;
-	
-	if (count_commands(cmds) == 1 && cmds->is_builtin)
-	{
-		one_cmd(cmds, env);
-		return;
-	}
-	pipes = malloc(sizeof(int[2]) * (count_commands(cmds) - 1));
-	pids = malloc(sizeof(pid_t) * count_commands(cmds));
-	if (handle_pids_pipes(cmds, pipes, pids))
-		return;
-	if (init_pipe(cmds, pipes, pids))
+		else
+			one_cmd(cmds, env);
 		return ;
-	freud(cmds, pids, env, pipes);
-	close_pipes(count_commands(cmds), pipes, pids, 1);
-	parent_wait(cmds, pids);
-	signals_restore();
-	free(pids);
-	free(pipes);
+	}
+	pipes = ft_malloc(sizeof(int [2]) * (n - 1), 0);
+	pids = ft_malloc(sizeof(pid_t) * n, 0);
+	if (handle_pids_pipes(cmds, pipes, pids) || init_pipe(cmds, pipes, pids))
+		return ;
+	return (freud(cmds, pids, env, pipes), close_pipes(n, pipes, pids, 1),
+		parent_wait(cmds, pids), signals_restore_bis());
 }

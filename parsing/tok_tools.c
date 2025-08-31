@@ -1,6 +1,4 @@
-
-
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 static void	update_type(t_token *token, t_token_type type)
 {
@@ -22,7 +20,9 @@ void	update_tokens(t_token **tokens)
 		else if (tmp->type == APPEND)
 			update_type(tmp->next, APPEND_FILE);
 		else if (tmp->type == HEREDOC)
+		{
 			update_type(tmp->next, HEREDOC_DEL);
+		}
 		tmp = tmp->next;
 	}
 }
@@ -31,9 +31,7 @@ static t_token	*add_token(char *value, t_token *next)
 {
 	t_token	*token;
 
-	token = malloc(sizeof(t_token));
-	if (token == NULL)
-		return (NULL);
+	token = ft_malloc(sizeof(t_token), 0);
 	token->value = parsing_strdup(value);
 	token->type = WORD;
 	token->next = next;
@@ -44,38 +42,31 @@ static t_token	*add_token(char *value, t_token *next)
 
 static t_token	*modify_token(t_token *tmp)
 {
-	t_modify_data	modify_data;
-
-	modify_data.new_head = NULL;
-	modify_data.curr = NULL;
-	modify_data.splitted = ft_split(tmp->value, ' ');
-	if (!modify_data.splitted)
-		return (NULL);
-	modify_data.len = 0;
-	while (modify_data.splitted[modify_data.len])
-		modify_data.len++;
-	modify_data.i = 0;
-	while (modify_data.i < modify_data.len)
+	t_modify_data (m_data);
+	m_data.new_head = NULL;
+	m_data.curr = NULL;
+	m_data.splitted = ft_split(tmp->value, ' ');
+	m_data.len = 0;
+	m_data.joignable = 0;
+	if (tmp->is_joignable)
+		m_data.joignable = 1;
+	while (m_data.splitted[m_data.len])
+		m_data.len++;
+	m_data.i = -1;
+	while (++m_data.i < m_data.len)
 	{
-		modify_data.token = add_token(modify_data.splitted[modify_data.i],
-				NULL);
-		if (!modify_data.token)
-		{
-			free_all(modify_data.splitted);
-			return (NULL);
-		}
-		if (!modify_data.new_head)
-			modify_data.new_head = modify_data.token;
+		m_data.token = add_token(m_data.splitted[m_data.i], NULL);
+		if (!m_data.new_head)
+			m_data.new_head = m_data.token;
 		else
-			modify_data.curr->next = modify_data.token;
-		modify_data.curr = modify_data.token;
-		modify_data.i++;
+		{
+			m_data.curr->next = m_data.token;
+			m_data.token->is_joignable = m_data.joignable;
+		}
+		m_data.curr = m_data.token;
 	}
-	modify_data.curr->next = tmp->next;
-	free_all(modify_data.splitted);
-	free(tmp->value);
-	free(tmp);
-	return (modify_data.new_head);
+	m_data.curr->next = tmp->next;
+	return (m_data.new_head);
 }
 
 void	join_tokens(t_token **tokens)

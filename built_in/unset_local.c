@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 static int	is_valid_unset(const char *arg)
 {
@@ -16,7 +16,7 @@ static int	is_valid_unset(const char *arg)
 	return (1);
 }
 
-void	remove_env_key(t_env **env, const char *key)
+static void	remove_env_key(t_env **env, char *key)
 {
 	t_env	*tmp;
 	t_env	*prev;
@@ -25,15 +25,13 @@ void	remove_env_key(t_env **env, const char *key)
 	prev = NULL;
 	while (tmp)
 	{
-		if (strcmp(tmp->key, key) == 0)
+		if (ft_strlen(key) == ft_strlen(tmp->key) && ft_strncmp(tmp->key, key,
+				ft_strlen(key)) == 0)
 		{
 			if (prev)
 				prev->next = tmp->next;
 			else
 				*env = tmp->next;
-			free(tmp->key);
-			free(tmp->value);
-			free(tmp);
 			return ;
 		}
 		prev = tmp;
@@ -47,22 +45,13 @@ int	unset(char **args, char ***env)
 	int		i;
 
 	list = transform_t_c(*env);
-	i = 1; 
+	i = 1;
 	while (args[i])
 	{
-		if (!is_valid_unset(args[i]))
-		{
-			// fprintf(stderr, ERROR_3, args[i]);
-			free_list(list);
-			return (1);
-		}
-		remove_env_key(&list, args[i]);
+		if (is_valid_unset(args[i]))
+			remove_env_key(&list, args[i]);
 		i++;
 	}
-	free_char_array(*env);
 	*env = transform_c_t(list);
-	free_list(list);
 	return (0);
 }
-
-

@@ -1,4 +1,25 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
+
+static int	atlas(t_env **env, char *key, char *value)
+{
+	t_env	*tmp;
+	t_env	*new;
+
+	tmp = *env;
+	if (!tmp)
+	{
+		new = ft_malloc(sizeof(t_env), 0);
+		new->key = ft_strdup(key);
+		if (value)
+			new->value = ft_strdup(value);
+		else
+			new->value = NULL;
+		new->next = NULL;
+		*env = new;
+		return (1);
+	}
+	return (0);
+}
 
 static void	update_or_add_env(t_env **env, char *key, char *value)
 {
@@ -6,15 +27,15 @@ static void	update_or_add_env(t_env **env, char *key, char *value)
 	t_env	*new;
 
 	tmp = *env;
+	if (atlas(env, key, value))
+		return ;
 	while (tmp)
 	{
-		if (ft_strcmp(tmp->key, key) == 0)
+		if (ft_strncmp(tmp->key, key, ft_strlen(key)) == 0 && is_equal(tmp->key,
+				key))
 		{
 			if (value)
-			{
-				free(tmp->value);
 				tmp->value = ft_strdup(value);
-			}
 			return ;
 		}
 		tmp = tmp->next;
@@ -25,89 +46,68 @@ static void	update_or_add_env(t_env **env, char *key, char *value)
 		new->value = ft_strdup(value);
 	else
 		new->value = NULL;
-	if (!new->key || (value && !new->value))
-	{
-		free(new->key);
-		free(new->value);
-		return ;
-	}
 	new->next = *env;
 	*env = new;
+}
+
+void	assign(char **key, char **value, const char *args)
+{
+	char	*eq;
+
+	eq = ft_strchr(args, '=');
+	if (eq)
+	{
+		*key = ft_substr(args, 0, eq - args);
+		*value = ft_strdup(eq + 1);
+	}
+	else
+	{
+		*key = ft_strdup(args);
+		*value = NULL;
+	}
+}
+
+static int	export_help(t_env **list, char **args)
+{
+	char	*key;
+	char	*value;
+	int		i;
+	int		j;
+
+	i = 1;
+	j = 0;
+	while (args[i])
+	{
+		assign(&key, &value, args[i]);
+		if (!is_valid(key))
+		{
+			print_error_3(ERROR_2, key, ERROR_2_3);
+			j = 1;
+			i++;
+			continue ;
+		}
+		update_or_add_env(list, key, value);
+		i++;
+	}
+	return (j);
 }
 
 int	export(char **args, char ***env)
 {
 	t_env	*list;
-	int		i;
-	char	*eq;
-	char	*key;
-	char	*value;
+	int		exit_status;
 
+	exit_status = 0;
 	if (args[1] == NULL)
 	{
-		env_local(*env);
+		bubble_sort(*env);
 		return (0);
 	}
 	list = transform_t_c(*env);
-	if (!list)
-		return (1);
-	i = 1;
-	while (args[i])
-	{
-		eq = ft_strchr(args[i], '=');
-		if (eq)
-		{
-			key = ft_substr(args[i], 0, eq - args[i]);
-			value = ft_strdup(eq + 1);
-		}
-		else
-		{
-			key = ft_strdup(args[i]);
-			value = NULL;
-		}
-		if (!is_valid(key))
-		{
-			// fprintf(stderr, ", key);
-			free(key);
-			free(value);
-			free_list(list);
-			return (1);
-		}
-		update_or_add_env(&list, key, value);
-		free(key);
-		free(value);
-		i++;
-	}
-	free_char_array(*env);
+	if (export_help(&list, args) == 1)
+		exit_status = 1;
 	*env = transform_c_t(list);
 	if (!*env)
-	{
-		free_list(list);
 		return (1);
-	}
-	free_list(list);
-	return (0);
-
-}
-
-char	*extract_var_name(char *start)
-{
-	int		i;
-	int		j;
-	char	*var;
-
-	i = 0;
-	while (start[i] && (ft_isalnum(start[i]) || start[i] == '_'))
-		i++;
-	var = malloc(sizeof(char) * (i + 1));
-	if (!var)
-		return (NULL);
-	j = 0;
-	while (j < i)
-	{
-		var[j] = start[j];
-		j++;
-	}
-	var[i] = '\0';
-	return (var);
+	return (exit_status);
 }

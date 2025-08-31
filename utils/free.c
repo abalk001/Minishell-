@@ -1,94 +1,50 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
-static void	free_redirections(t_redirection *redirections)
+static void	*free_collector(t_address **head)
 {
-	t_redirection	*tmp;
+	t_address	*tmp;
 
-	while (redirections)
+	tmp = *head;
+	while (tmp)
 	{
-		tmp = redirections;
-		redirections = redirections->next;
-		free(tmp->filenames);
+		(*head) = (*head)->next;
+		free(tmp->address);
 		free(tmp);
+		tmp = (*head);
 	}
+	return (NULL);
 }
 
-void	free_cmds(t_cmd *cmds)
+static t_address	*ft_address_last(t_address *lst)
 {
-	t_cmd	*tmp;
+	t_address	*temp;
 
-	while (cmds)
+	temp = lst;
+	while (temp && temp->next)
 	{
-		tmp = cmds;
-		cmds = cmds->next;
-		free_all(tmp->args);
-		free_redirections(tmp->redirections);
-		free(tmp);
+		temp = temp->next;
 	}
-}
-
-void	free_tokens(t_token *tokens)
-{
-	t_token	*tmp;
-
-	while (tokens)
-	{
-		tmp = tokens;
-		tokens = tokens->next;
-		free(tmp->value);
-		free(tmp);
-	}
-	free(tokens);
-}
-
-void	free_all(char **av)
-{
-	int	i;
-
-	i = 0;
-	if (av == NULL)
-		return ;
-	while (av[i])
-	{
-		free(av[i]);
-		i++;
-	}
-	free(av);
+	return (temp);
 }
 
 void	*ft_malloc(size_t size, int to_free)
 {
 	static t_address	*head;
-	t_address		*new_node;
-	t_address		*last;
-	t_address		*tmp;
-	void			*new_ptr;
+	t_address			*new_node;
+	t_address			*last;
+	void				*new_ptr;
 
 	if (to_free)
-	{
-		tmp = head;
-		while (tmp)
-		{
-			head = head->next;
-			free(tmp->address);
-			free(tmp);
-			tmp = head;
-		}
-		return (NULL);
-	}
+		return (free_collector(&head));
 	last = ft_address_last(head);
 	new_ptr = malloc(size);
 	if (!new_ptr)
-	{
-		printf("Tracking allocation failed\n");
-		return (NULL);
-	}
+		exit_bis(EXIT_FAILURE);
 	new_node = malloc(sizeof(t_address));
 	if (!new_node)
 	{
-		printf("Tracking allocation failed\n");
 		free(new_ptr);
-		return (NULL);
+		exit_bis(EXIT_FAILURE);
 	}
 	new_node->address = new_ptr;
 	new_node->next = NULL;

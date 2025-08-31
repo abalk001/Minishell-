@@ -1,5 +1,5 @@
 #include "libft.h"
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 char	*ft_strdup(const char *src)
 {

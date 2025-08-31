@@ -9,11 +9,9 @@ typedef struct s_list
 	void			*content;
 	struct s_list	*next;
 }	t_list;
-void	ft_bzero(void *s, size_t n);
+
 char	*ft_itoa(int n);
-void	*ft_calloc(size_t nmemb, size_t size);
 void	ft_putchar_fd(char c, int fd);
-void	ft_putnbr_fd(int n, int fd);
 void	ft_putstr_fd(char *s, int fd);
 char	*ft_substr(char const *s, unsigned int start, size_t len);
 int		ft_isalnum(int i);

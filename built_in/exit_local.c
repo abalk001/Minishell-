@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 static int	ft_atoll_overflow(const char *str, long long *res)
 {
@@ -36,7 +36,25 @@ static void	write_error(char *str)
 	write(STDERR_FILENO, ": numeric argument required\n", 28);
 }
 
-int	builtin_exit(char **args, char **envp)
+static int	is_numeric(const char *str)
+{
+	int	i;
+
+	i = 0;
+	if (str[i] == '+' || str[i] == '-')
+		i++;
+	if (!str[i])
+		return (0);
+	while (str[i])
+	{
+		if (str[i] < '0' || str[i] > '9')
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
+int	builtin_exit(char **args)
 {
 	unsigned char	status;
 	long long		val;
@@ -59,7 +77,7 @@ int	builtin_exit(char **args, char **envp)
 		else
 			status = (unsigned char)val;
 	}
-	free_all(envp);
 	rl_clear_history();
+	ft_malloc(0, 1);
 	exit(status);
 }

@@ -1,6 +1,6 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
-int	get_files_nb(t_token *tokens, t_token_type type)
+static int	get_files_nb(t_token *tokens, t_token_type type)
 {
 	int	len;
 
@@ -19,7 +19,6 @@ char	*get_files(t_token **tokens_ptr, t_token_type type)
 	int		files_nbr;
 
 	files_nbr = get_files_nb(*tokens_ptr, type);
-	filenames = ft_malloc(sizeof(char) * files_nbr, 0);
 	filenames = ft_strdup((*tokens_ptr)->value);
 	(*tokens_ptr) = (*tokens_ptr)->next;
 	return (filenames);

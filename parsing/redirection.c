@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 static int	get_redirections_nbr(t_token *tokens)
 {
@@ -21,6 +21,11 @@ static void	update_redirection(t_token **last_token,
 		t_redirection **redirection, t_token_type type, t_token_type file_type)
 {
 	*last_token = (*last_token)->next;
+	(*redirection)->expanded = 1;
+	if ((*last_token)->quoted != NONE)
+	{
+		(*redirection)->expanded = 0;
+	}
 	(*redirection)->type = type;
 	(*redirection)->filenames = get_files(last_token, file_type);
 }
@@ -31,6 +36,7 @@ static t_redirection	*get_redirection(t_token **last_token)
 
 	redirection = ft_malloc(sizeof(t_redirection), 0);
 	redirection->filenames = NULL;
+	redirection->expanded = 1;
 	redirection->next = NULL;
 	while (*last_token && (*last_token)->type != REDIRECT_OUT
 		&& (*last_token)->type != REDIRECT_IN && (*last_token)->type != APPEND
@@ -49,6 +55,20 @@ static t_redirection	*get_redirection(t_token **last_token)
 	return (redirection);
 }
 
+static void	free_tokens(t_token *tokens)
+{
+	t_token	*tmp;
+
+	while (tokens)
+	{
+		tmp = tokens;
+		tokens = tokens->next;
+		free(tmp->value);
+		free(tmp);
+	}
+	free(tokens);
+}
+
 t_redirection	*get_redirections(t_token *tokens)
 {
 	t_redirection_data	redir_data;
@@ -64,7 +84,7 @@ t_redirection	*get_redirections(t_token *tokens)
 		if (!redir_data.new_node)
 		{
 			free_tokens(tokens);
-			status_fct(2);
+			status_fct(STATUS_OTHER);
 			return (NULL);
 		}
 		if (!redir_data.head)

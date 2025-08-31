@@ -1,30 +1,36 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
+
+void	write_newline(int newline)
+{
+	if (newline)
+		write(STDOUT_FILENO, "\n", 1);
+}
 
 int	echo_local(char **args)
 {
+	int	j;
 	int	i;
 	int	newline;
 
-	i = 0;
+	i = 1;
 	newline = 1;
-	if (!args[1])
-		return (write(STDOUT_FILENO, "\n", 1), 0);
-	while (args[1][0] == '-' && args[1][++i])
+	while (args[i] && args[i][0] == '-')
 	{
-		if (args[1][i] == 'n')
-			newline = 0;
-	}
-	i = 0;
-	if (args[1] && (newline == 1) == 0)
+		j = 1;
+		while (args[i][j] == 'n')
+			j++;
+		if (args[i][j] != '\0')
+			break ;
+		newline = 0;
 		i++;
-	while (args[++i])
+	}
+	while (args[i])
 	{
-		write(1, args[i], ft_strlen(args[i]));
+		write(STDOUT_FILENO, args[i], ft_strlen(args[i]));
 		if (args[i + 1])
 			write(STDOUT_FILENO, " ", 1);
+		i++;
 	}
-	if (newline)
-		write(STDOUT_FILENO, "\n", 1);
+	write_newline(newline);
 	return (0);
 }
-

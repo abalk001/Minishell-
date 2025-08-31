@@ -1,17 +1,12 @@
-#include "../minishell.h"
+#include "../include/minishell.h"
 
 static t_token	*new_token(char *value, t_token_type type, t_quoted quoted,
 		int joignable)
 {
 	t_token	*token;
 
-	token = malloc(sizeof(t_token));
-	if (token == NULL)
-		return (NULL);
-	if (ft_strlen(value) == 0)
-		token->value = parsing_strdup("''");
-	else
-		token->value = parsing_strdup(value);
+	token = ft_malloc(sizeof(t_token), 0);
+	token->value = parsing_strdup(value);
 	token->type = type;
 	token->next = NULL;
 	token->quoted = quoted;
@@ -19,21 +14,7 @@ static t_token	*new_token(char *value, t_token_type type, t_quoted quoted,
 	return (token);
 }
 
-int	is_one_word(char *str)
-{
-	int		i;
-	char	**splitted;
-	splitted = ft_split(str, ' ');
-	i = 0;
-	while (splitted[i])
-		i++;
-	free_all(splitted);
-	if (i > 1)
-		return (0);
-	return (1);
-}
-
-char	*extract(char **line, int *joignable)
+static char	*extract(char **line, int *joignable)
 {
 	char	*start;
 
@@ -45,7 +26,7 @@ char	*extract(char **line, int *joignable)
 	return (parsing_strndup(start, *line - start));
 }
 
-void	prepare_token(t_tokenize_data *data)
+static void	prepare_token(t_tokenize_data *data)
 {
 	if (ft_strncmp((*data).p, ">>", 2) == 0 || ft_strncmp((*data).p, "<<",
 			2) == 0)
@@ -86,7 +67,6 @@ t_token	*tokenize(char *input)
 		prepare_token(&tok_data);
 		tok_data.token = new_token(tok_data.value, tok_data.type,
 				tok_data.quoted, tok_data.joignable);
-		free(tok_data.value);
 		if (!tok_data.head)
 			tok_data.head = tok_data.token;
 		else
@@ -100,14 +80,15 @@ void	expand_token(t_token *token, char **envp)
 {
 	int		total;
 	char	*new;
+	int		to_double;
 
 	total = get_total(token->value, envp);
-	printf("Total is %d\n", total);
-	new = malloc(sizeof(char) * (total + 1));
-	if (!new)
-		return ;
-	expand_into(token->value, envp, new);
-	free(token->value);
+	to_double = 0;
+	new = ft_malloc(sizeof(char) * (total + 1), 0);
+	expand_into(token->value, envp, new, &to_double);
+	if (to_double)
+	{
+		token->quoted = DOUBLE;
+	}
 	token->value = parsing_strdup(new);
-	free(new);
 }
